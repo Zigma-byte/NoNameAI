@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Smart AI Chat with Memory</title>
+<style>
+  /* Reset & basics */
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f4f8;
+    display: flex;
+    height: 100vh;
+    color: #222;
+  }
+  .container {
+    display: flex;
+    max-width: 1000px;
+    margin: auto;
+    width: 100%;
+    height: 100vh;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    overflow: hidden;
+  }
+  aside {
+    width: 280px;
+    border-right: 1px solid #ddd;
+    background: #f9fbfd;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.25rem;
+  }
+  aside h3 {
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+    color: #4f46e5;
+    user-select: none;
+  }
+  aside button, aside input[type="file"] {
+    margin-bottom: 0.75rem;
+    border-radius: 6px;
+  }
+  aside button {
+    background: #4f46e5;
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.25s ease;
+  }
+  aside button:hover {
+    background: #4338ca;
+  }
+  #chatList {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+  }
+  .chat-item {
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    border-radius: 6px;
+    margin-bottom: 6px;
+    background: #e7e9ff;
+    color: #4f46e5;
+    font-weight: 500;
+    user-select: none;
+    transition: background-color 0.25s ease;
+  }
+  .chat-item:hover {
+    background: #c7cbff;
+  }
+  .chat-item.active {
+    background: #4f46e5;
+    color: white;
+    font-weight: 700;
+  }
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 1.5rem;
+  }
+  #chatTitle {
+    margin: 0 0 0.5rem 0;
+    font-weight: 700;
+    color: #333;
+    user-select: none;
+  }
+  #messages {
+    flex: 1;
+    background: #f5f7fa;
+    border-radius: 10px;
+    padding: 1rem 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    scroll-behavior: smooth;
+  }
+  .message {
+    max-width: 70%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 14px;
+    word-wrap: break-word;
+    font-size: 1rem;
+    line-height: 1.3;
+    white-space: pre-wrap;
+  }
+  .message.user {
+    background: #4f46e5;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+  }
+  .message.assistant {
+    background: #fff;
+    border: 1px solid #ddd;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+  }
+  .input-area {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.75rem;
+  }
+  #chatInput {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border-radius: 30px;
+    border: 1px solid #bbb;
+    font-size: 1rem;
+    outline-offset: 2px;
+    transition: border-color 0.2s ease;
+  }
+  #chatInput:focus {
+    border-color: #4f46e5;
+    outline: none;
+  }
+  #sendBtn {
+    background: #4f46e5;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 0 1.4rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.25s ease;
+  }
+  #sendBtn:hover {
+    background: #4338ca;
+  }
+  /* Scrollbar styling */
+  #messages::-webkit-scrollbar {
+    width: 8px;
+  }
+  #messages::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  #messages::-webkit-scrollbar-thumb {
+    background-color: rgba(79, 70, 229, 0.4);
+    border-radius: 20px;
+  }
+
+  /* Responsive */
+  @media (max-width: 720px) {
+    .container {
+      flex-direction: column;
+      height: 100vh;
+      max-width: 100%;
+      border-radius: 0;
+      box-shadow: none;
+    }
+    aside {
+      width: 100%;
+      height: 160px;
+      border-right: none;
+      border-bottom: 1px solid #ddd;
+      padding: 0.75rem 1rem;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    #chatList {
+      flex: 1;
+      margin-top: 0;
+      height: 80px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+    }
+    .chat-item {
+      display: inline-block;
+      margin-right: 8px;
+      margin-bottom: 0;
+    }
+    main {
+      flex: 1;
+      padding: 1rem 1rem 1rem 1rem;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <aside>
+    <h3>Chats</h3>
+    <button onclick="createChat()">+ New Chat</button>
+    <div id="chatList" title="Select a chat"></div>
+    <hr style="margin: 1rem 0 0.5rem;" />
+    <button onclick="exportData()">Export Chat & Memory</button>
+    <input type="file" id="importFile" accept="application/json" onchange="importData(event)" />
+    <button onclick="clearMemory()">Clear Memory</button>
+  </aside>
+  <main>
+    <h2 id="chatTitle">General</h2>
+    <div id="messages" aria-live="polite" aria-label="Chat messages"></div>
+    <div class="input-area">
+      <input id="chatInput" type="text" placeholder="Type your message and hit Enter..." autocomplete="off" />
+      <button id="sendBtn" onclick="sendMessage()">Send</button>
+    </div>
+  </main>
+</div>
+
+<script>
+  const LOCAL_STORAGE_KEY = 'ai_multi_chat_html';
+  const MEMORY_KEY = 'ai_memory_html';
+
+  // The initial JSON memory you gave me (shortened here for brevity)
+  const defaultMemory = {
+    words: {
+      "hello": { "id": 1, "word": "hello", "count": 10, "next": {} },
+      "what": { "id": 2, "word": "what", "count": 13, "next": { "are": 1, "is": 1, "problem": 1 } },
+      "are": { "id": 3, "word": "are", "count": 6, "next": { "you": 1, "an": 2 } },
+      "you": { "id": 4, "word": "you", "count": 10, "next": { "know": 1, "are": 4, "mean": 1 } },
+      "doing": { "id": 5, "word": "doing", "count": 2, "next": {} },
+      "nothing": { "id": 6, "word": "nothing", "count": 1, "next": {} },
+      "talking": { "id": 7, "word": "talking", "count": 2, "next": { "with": 2 } },
+      "with": { "id": 8, "word": "with", "count": 2, "next": { "you": 2 } },
+      "thanks": { "id": 9, "word": "thanks", "count": 2, "next": {} },
+      "is": { "id": 10, "word": "is", "count": 4, "next": { "a": 1, "it": 1 } },
+      "roblox": { "id": 11, "word": "roblox", "count": 3, "next": { "is": 1 } },
+      "no": { "id": 12, "word": "no", "count": 5, "next": { "problem": 2 } },
+      "problem": { "id": 13, "word": "problem", "count": 4, "next": {} },
+      "im": { "id": 14, "word": "im", "count": 1, "next": {} },
+      "sitting": { "id": 15, "word": "sitting", "count": 3, "next": {} },
+      "its": { "id": 16, "word": "its", "count": 1, "next": { "a": 1 } },
+      "a": { "id": 17, "word": "a", "count": 4, "next": { "game": 1, "comma": 1, "exit": 1 } },
+      "game": { "id": 18, "word": "game", "count": 1, "next": {} },
+      "yes": { "id": 19, "word": "yes", "count": 2, "next": {} },
+      "why": { "id": 20, "word": "why", "count": 1, "next": {} },
+      "nope": { "id": 22, "word": "nope", "count": 1, "next": {} },
+      "use": { "id": 23, "word": "use", "count": 1, "next": { "a": 1 } },
+      "comma": { "id": 24, "word": "comma", "count": 1, "next": {} },
+      "": { "id": 25, "word": "", "count": 1, "next": {} },
+      "know": { "id": 26, "word": "know", "count": 1, "next": { "a": 1 } },
+      "exit": { "id": 27, "word": "exit", "count": 2, "next": {} },
+      "an": { "id": 28, "word": "an", "count": 2, "next": { "AI": 1, "ai": 1 } },
+      "not": { "id": 29, "word": "not", "count": 1, "next": { "sitting,": 1 } },
+      "ai": { "id": 30, "word": "ai", "count": 2, "next": {} },
+      "exactly": { "id": 31, "word": "exactly", "count": 1, "next": {} },
+      "am": { "id": 35, "word": "am", "count": 1, "next": { "i": 1 } },
+      "i": { "id": 36, "word": "i", "count": 1, "next": { "ai": 1 } },
+      "how": { "id": 37, "count": 1, "next": { "is": 1 } },
+      "it": { "id": 38, "count": 1, "next": { "going": 1 } },
+      "going": { "id": 39, "count": 1, "next": {} },
+      "uh": { "id": 40, "count": 1, "next": {} },
+      "do": { "id": 41, "count": 1, "next": { "you": 1 } },
+      "mean": { "id": 42, "count": 1, "next": { "by": 1 } },
+      "by": { "id": 43, "count": 1, "next": { "that": 1 } },
+      "that": { "id": 44, "count": 1, "next": {} }
+    },
+    history: [],
+    definitions: {},
+    next_id: 45
+  };
+
+  function normalize(word) {
+    return (word || '').toLowerCase().replace(/[^\w\s]/g, '').trim();
+  }
+
+  // Load/save chat state
+  function loadState() {
+    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || 'null');
+  }
+  function saveState() {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  }
+  // Load/save AI memory
+  function loadMemory() {
+    let mem = JSON.parse(localStorage.getItem(MEMORY_KEY) || 'null');
+    if (!mem) {
+      mem = defaultMemory;
+      localStorage.setItem(MEMORY_KEY, JSON.stringify(mem));
+    }
+    return mem;
+  }
+  function saveMemory() {
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
+  }
+
+  // Application State
+  let state = {
+    activeChatId: null,
+    chats: [],
+  };
+  let memory = loadMemory();
+
+  // UI elements
+  const chatListEl = document.getElementById('chatList');
+  const chatTitleEl = document.getElementById('chatTitle');
+  const messagesEl = document.getElementById('messages');
+  const chatInputEl = document.getElementById('chatInput');
+  const sendBtnEl = document.getElementById('sendBtn');
+
+  // Helpers
+  function createChat() {
+    const id = Date.now().toString();
+    state.chats.push({ id, name: `Chat #${state.chats.length + 1}`, messages: [] });
+    setActiveChat(id);
+    saveState();
+    renderChatList();
+  }
+  function setActiveChat(id) {
+    state.activeChatId = id;
+    saveState();
+    renderChatList();
+    renderMessages();
+  }
+  function renderChatList() {
+    chatListEl.innerHTML = '';
+    state.chats.forEach(chat => {
+      const div = document.createElement('div');
+      div.className = 'chat-item' + (chat.id === state.activeChatId ? ' active' : '');
+      div.textContent = chat.name;
+      div.onclick = () => setActiveChat(chat.id);
+      chatListEl.appendChild(div);
+    });
+  }
+  function renderMessages() {
+    const chat = state.chats.find(c => c.id === state.activeChatId);
+    if (!chat) {
+      chatTitleEl.textContent = 'No chat selected';
+      messagesEl.innerHTML = '';
+      return;
+    }
+    chatTitleEl.textContent = chat.name;
+    messagesEl.innerHTML = '';
+    chat.messages.forEach(m => {
+      const div = document.createElement('div');
+      div.className = 'message ' + (m.role === 'user' ? 'user' : 'assistant');
+      div.textContent = m.text;
+      messagesEl.appendChild(div);
+    });
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  // AI learning from user and assistant messages (basic incremental word chain)
+  function learn(text) {
+    const words = text.split(/\s+/).map(normalize).filter(Boolean);
+    for (let i = 0; i < words.length; i++) {
+      const w = words[i];
+      if (!memory.words[w]) {
+        memory.words[w] = { id: memory.next_id++, word: w, count: 0, next: {} };
+      }
+      memory.words[w].count++;
+      if (i < words.length - 1) {
+        const nextWord = words[i + 1];
+        if (!memory.words[w].next[nextWord]) memory.words[w].next[nextWord] = 0;
+        memory.words[w].next[nextWord]++;
+      }
+    }
+    saveMemory();
+  }
+
+  // Generate AI response based on last user message context
+  function generateResponse() {
+    const chat = state.chats.find(c => c.id === state.activeChatId);
+    if (!chat || chat.messages.length === 0) return "I'm listening.";
+
+    // Find last user message
+    let lastUserMsg = [...chat.messages].reverse().find(m => m.role === 'user');
+    if (!lastUserMsg) return "Tell me more.";
+
+    const userWords = lastUserMsg.text.split(/\s+/).map(normalize).filter(Boolean);
+
+    // Collect candidate next words from memory for any user word
+    let candidateNextWords = [];
+    userWords.forEach(word => {
+      if (memory.words[word]) {
+        const nextMap = memory.words[word].next;
+        Object.entries(nextMap).forEach(([nextWord, count]) => {
+          for (let i = 0; i < count; i++) candidateNextWords.push(nextWord);
+        });
+      }
+    });
+
+    // If no candidates, fallback to random word from memory
+    if (candidateNextWords.length === 0) {
+      const keys = Object.keys(memory.words);
+      const randomWord = keys[Math.floor(Math.random() * keys.length)];
+      candidateNextWords.push(randomWord);
+    }
+
+    // Start building response
+    let current = candidateNextWords[Math.floor(Math.random() * candidateNextWords.length)];
+    let sentence = [current];
+
+    for (let i = 0; i < 15; i++) {
+      const nextMap = memory.words[current]?.next || {};
+      const weighted = [];
+      for (const [word, count] of Object.entries(nextMap)) {
+        for (let j = 0; j < count; j++) weighted.push(word);
+      }
+      if (weighted.length === 0) break;
+      current = weighted[Math.floor(Math.random() * weighted.length)];
+      sentence.push(current);
+      if (['.', '!', '?'].some(p => current.endsWith(p))) break;
+    }
+
+    // Format sentence
+    let output = sentence.join(' ');
+    return output.charAt(0).toUpperCase() + output.slice(1);
+  }
+
+  function sendMessage() {
+    const chat = state.chats.find(c => c.id === state.activeChatId);
+    if (!chat) {
+      alert('Please create or select a chat first!');
+      return;
+    }
+    const text = chatInputEl.value.trim();
+    if (!text) return;
+
+    // Add user message
+    chat.messages.push({ role: 'user', text });
+    learn(text);
+
+    // Clear input and render immediately
+    chatInputEl.value = '';
+    renderMessages();
+
+    // Generate AI response after a small delay for UX
+    sendBtnEl.disabled = true;
+    setTimeout(() => {
+      const aiResponse = generateResponse();
+      chat.messages.push({ role: 'assistant', text: aiResponse });
+      learn(aiResponse);
+      saveState();
+      renderMessages();
+      sendBtnEl.disabled = false;
+      chatInputEl.focus();
+    }, 500);
+  }
+
+  // Keyboard enter to send
+  chatInputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  });
+
+  // Import/export functions
+  function exportData() {
+    const data = {
+      chats: state.chats,
+      memory,
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'chat-memory-export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (data.chats && data.memory) {
+          state.chats = data.chats;
+          memory = data.memory;
+          saveState();
+          saveMemory();
+          if (state.chats.length > 0) setActiveChat(state.chats[0].id);
+          renderChatList();
+          renderMessages();
+          alert('Import successful!');
+        } else {
+          alert('Invalid file format.');
+        }
+      } catch (err) {
+        alert('Error parsing JSON.');
+      }
+    };
+    reader.readAsText(file);
+    // Reset input so user can re-import same file if needed
+    event.target.value = '';
+  }
+
+  function clearMemory() {
+    if (confirm('Are you sure you want to clear all AI memory? This cannot be undone.')) {
+      memory = { words: {}, history: [], definitions: {}, next_id: 1 };
+      saveMemory();
+      alert('AI memory cleared.');
+    }
+  }
+
+  // Initialize
+  function init() {
+    const loadedState = loadState();
+    if (loadedState && loadedState.chats && loadedState.chats.length > 0) {
+      state = loadedState;
+      if (!state.activeChatId && state.chats.length > 0) {
+        state.activeChatId = state.chats[0].id;
+      }
+    } else {
+      createChat();
+    }
+    renderChatList();
+    renderMessages();
+  }
+
+  init();
+</script>
+</body>
+</html>
