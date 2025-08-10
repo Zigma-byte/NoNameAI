@@ -22,34 +22,31 @@ NoNameAI is basically just a dumb chatbot that talks back in the weirdest ways. 
 ## Example conversation (I swear this actually happened)
 
 
-You: sigma balls
+Me: sigma balls
 
-AI: Sigma balls - AI
+AI: Sigma balls
 
-You: so
-AI: Thanks - AI
+Me: so
+AI: Thanks
 
-You: stop it
-AI: Going - AI
+Me: stop it
+AI: Going
 
-You: what
-AI: Are an ai - AI
+Me: what
+AI: Are an ai
 
-You: gang bang you
-AI: Are an ai - AI
+Me: gang bang you
+AI: Are an ai
 
-You: NO
-AI: Problem - AI
+Me: NO
+AI: Problem
 
-You: SHUT THE F#CK UP
-AI: F#ck up - AI
+Me: SHUT THE F#CK UP
+AI: F#ck up
 
-You: no, im the sigma rizzler and the sigma god
-AI: Problem - AI
+Me: no, im the sigma rizzler and the sigma god
+AI: Problem
 
-yaml
-Kopiér
-Rediger
 
 If you teach it bad words, it might go full villain on you. It’s an AI with an attitude problem.
 
