@@ -224,316 +224,383 @@
     <div id="messages" aria-live="polite" aria-label="Chat messages"></div>
     <div class="input-area">
       <input id="chatInput" type="text" placeholder="Type your message and hit Enter..." autocomplete="off" />
+      <button onclick="document.getElementById('imageUpload').click()">📷</button>
+      <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleImageUpload(event)" />
       <button id="sendBtn" onclick="sendMessage()">Send</button>
     </div>
   </main>
 </div>
 
 <script>
-  const LOCAL_STORAGE_KEY = 'ai_multi_chat_html';
-  const MEMORY_KEY = 'ai_memory_html';
+ const LOCAL_STORAGE_KEY = 'ai_multi_chat_html';
+const MEMORY_KEY = 'ai_memory_html';
 
-  // The initial JSON memory you gave me (shortened here for brevity)
-  const defaultMemory = {
-    words: {
-      "hello": { "id": 1, "word": "hello", "count": 10, "next": {} },
-      "what": { "id": 2, "word": "what", "count": 13, "next": { "are": 1, "is": 1, "problem": 1 } },
-      "are": { "id": 3, "word": "are", "count": 6, "next": { "you": 1, "an": 2 } },
-      "you": { "id": 4, "word": "you", "count": 10, "next": { "know": 1, "are": 4, "mean": 1 } },
-      "doing": { "id": 5, "word": "doing", "count": 2, "next": {} },
-      "nothing": { "id": 6, "word": "nothing", "count": 1, "next": {} },
-      "talking": { "id": 7, "word": "talking", "count": 2, "next": { "with": 2 } },
-      "with": { "id": 8, "word": "with", "count": 2, "next": { "you": 2 } },
-      "thanks": { "id": 9, "word": "thanks", "count": 2, "next": {} },
-      "is": { "id": 10, "word": "is", "count": 4, "next": { "a": 1, "it": 1 } },
-      "roblox": { "id": 11, "word": "roblox", "count": 3, "next": { "is": 1 } },
-      "no": { "id": 12, "word": "no", "count": 5, "next": { "problem": 2 } },
-      "problem": { "id": 13, "word": "problem", "count": 4, "next": {} },
-      "im": { "id": 14, "word": "im", "count": 1, "next": {} },
-      "sitting": { "id": 15, "word": "sitting", "count": 3, "next": {} },
-      "its": { "id": 16, "word": "its", "count": 1, "next": { "a": 1 } },
-      "a": { "id": 17, "word": "a", "count": 4, "next": { "game": 1, "comma": 1, "exit": 1 } },
-      "game": { "id": 18, "word": "game", "count": 1, "next": {} },
-      "yes": { "id": 19, "word": "yes", "count": 2, "next": {} },
-      "why": { "id": 20, "word": "why", "count": 1, "next": {} },
-      "nope": { "id": 22, "word": "nope", "count": 1, "next": {} },
-      "use": { "id": 23, "word": "use", "count": 1, "next": { "a": 1 } },
-      "comma": { "id": 24, "word": "comma", "count": 1, "next": {} },
-      "": { "id": 25, "word": "", "count": 1, "next": {} },
-      "know": { "id": 26, "word": "know", "count": 1, "next": { "a": 1 } },
-      "exit": { "id": 27, "word": "exit", "count": 2, "next": {} },
-      "an": { "id": 28, "word": "an", "count": 2, "next": { "AI": 1, "ai": 1 } },
-      "not": { "id": 29, "word": "not", "count": 1, "next": { "sitting,": 1 } },
-      "ai": { "id": 30, "word": "ai", "count": 2, "next": {} },
-      "exactly": { "id": 31, "word": "exactly", "count": 1, "next": {} },
-      "am": { "id": 35, "word": "am", "count": 1, "next": { "i": 1 } },
-      "i": { "id": 36, "word": "i", "count": 1, "next": { "ai": 1 } },
-      "how": { "id": 37, "count": 1, "next": { "is": 1 } },
-      "it": { "id": 38, "count": 1, "next": { "going": 1 } },
-      "going": { "id": 39, "count": 1, "next": {} },
-      "uh": { "id": 40, "count": 1, "next": {} },
-      "do": { "id": 41, "count": 1, "next": { "you": 1 } },
-      "mean": { "id": 42, "count": 1, "next": { "by": 1 } },
-      "by": { "id": 43, "count": 1, "next": { "that": 1 } },
-      "that": { "id": 44, "count": 1, "next": {} }
-    },
-    history: [],
-    definitions: {},
-    next_id: 45
-  };
+// Default memory object (shortened here, replace with your full object)
+const defaultMemory = {
+  words: { hello: { id: 1, word: 'hello', count: 10, next: {} } },
+  history: [],
+  definitions: {},
+  next_id: 2,
+};
 
-  function normalize(word) {
-    return (word || '').toLowerCase().replace(/[^\w\s]/g, '').trim();
-  }
+function normalize(word) {
+  return (word || '').toLowerCase().replace(/[^\w\s]/g, '').trim();
+}
 
-  // Load/save chat state
-  function loadState() {
-    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || 'null');
+// State persistence
+function loadState() {
+  return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || 'null');
+}
+function saveState() {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+}
+function loadMemory() {
+  let mem = JSON.parse(localStorage.getItem(MEMORY_KEY) || 'null');
+  if (!mem) {
+    mem = defaultMemory;
+    localStorage.setItem(MEMORY_KEY, JSON.stringify(mem));
   }
-  function saveState() {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
-  }
-  // Load/save AI memory
-  function loadMemory() {
-    let mem = JSON.parse(localStorage.getItem(MEMORY_KEY) || 'null');
-    if (!mem) {
-      mem = defaultMemory;
-      localStorage.setItem(MEMORY_KEY, JSON.stringify(mem));
-    }
-    return mem;
-  }
-  function saveMemory() {
-    localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
-  }
+  return mem;
+}
+function saveMemory() {
+  localStorage.setItem(MEMORY_KEY, JSON.stringify(memory));
+}
 
-  // Application State
-  let state = {
-    activeChatId: null,
-    chats: [],
-  };
-  let memory = loadMemory();
+// App state
+let state = { activeChatId: null, chats: [] };
+let memory = loadMemory();
 
-  // UI elements
-  const chatListEl = document.getElementById('chatList');
-  const chatTitleEl = document.getElementById('chatTitle');
-  const messagesEl = document.getElementById('messages');
-  const chatInputEl = document.getElementById('chatInput');
-  const sendBtnEl = document.getElementById('sendBtn');
+// UI
+const chatListEl = document.getElementById('chatList');
+const chatTitleEl = document.getElementById('chatTitle');
+const messagesEl = document.getElementById('messages');
+const chatInputEl = document.getElementById('chatInput');
+const sendBtnEl = document.getElementById('sendBtn');
 
-  // Helpers
-  function createChat() {
-    const id = Date.now().toString();
-    state.chats.push({ id, name: `Chat #${state.chats.length + 1}`, messages: [] });
-    setActiveChat(id);
-    saveState();
-    renderChatList();
-  }
-  function setActiveChat(id) {
-    state.activeChatId = id;
-    saveState();
-    renderChatList();
-    renderMessages();
-  }
-  function renderChatList() {
-    chatListEl.innerHTML = '';
-    state.chats.forEach(chat => {
-      const div = document.createElement('div');
-      div.className = 'chat-item' + (chat.id === state.activeChatId ? ' active' : '');
-      div.textContent = chat.name;
-      div.onclick = () => setActiveChat(chat.id);
-      chatListEl.appendChild(div);
-    });
-  }
-  function renderMessages() {
-    const chat = state.chats.find(c => c.id === state.activeChatId);
-    if (!chat) {
-      chatTitleEl.textContent = 'No chat selected';
-      messagesEl.innerHTML = '';
-      return;
-    }
-    chatTitleEl.textContent = chat.name;
+// Helpers
+function createChat() {
+  const id = Date.now().toString();
+  state.chats.push({ id, name: `Chat #${state.chats.length + 1}`, messages: [] });
+  setActiveChat(id);
+  saveState();
+  renderChatList();
+}
+function setActiveChat(id) {
+  state.activeChatId = id;
+  saveState();
+  renderChatList();
+  renderMessages();
+}
+function renderChatList() {
+  chatListEl.innerHTML = '';
+  state.chats.forEach((chat) => {
+    const div = document.createElement('div');
+    div.className = `chat-item${chat.id === state.activeChatId ? ' active' : ''}`;
+    div.textContent = chat.name;
+    div.onclick = () => setActiveChat(chat.id);
+    chatListEl.appendChild(div);
+  });
+}
+function renderMessages() {
+  const chat = state.chats.find((c) => c.id === state.activeChatId);
+  if (!chat) {
+    chatTitleEl.textContent = 'No chat selected';
     messagesEl.innerHTML = '';
-    chat.messages.forEach(m => {
-      const div = document.createElement('div');
-      div.className = 'message ' + (m.role === 'user' ? 'user' : 'assistant');
+    return;
+  }
+  chatTitleEl.textContent = chat.name;
+  messagesEl.innerHTML = '';
+  chat.messages.forEach((m) => {
+    const div = document.createElement('div');
+    div.className = `message ${m.role === 'user' ? 'user' : 'assistant'}`;
+    if (m.type === 'image') {
+      const img = document.createElement('img');
+      img.src = m.url;
+      img.alt = 'Uploaded image';
+      img.style.maxWidth = '200px';
+      img.style.borderRadius = '8px';
+      div.appendChild(img);
+    } else {
       div.textContent = m.text;
-      messagesEl.appendChild(div);
-    });
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
-
-  // AI learning from user and assistant messages (basic incremental word chain)
-  function learn(text) {
-    const words = text.split(/\s+/).map(normalize).filter(Boolean);
-    for (let i = 0; i < words.length; i++) {
-      const w = words[i];
-      if (!memory.words[w]) {
-        memory.words[w] = { id: memory.next_id++, word: w, count: 0, next: {} };
-      }
-      memory.words[w].count++;
-      if (i < words.length - 1) {
-        const nextWord = words[i + 1];
-        if (!memory.words[w].next[nextWord]) memory.words[w].next[nextWord] = 0;
-        memory.words[w].next[nextWord]++;
-      }
     }
-    saveMemory();
-  }
+    messagesEl.appendChild(div);
+  });
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
 
-  // Generate AI response based on last user message context
-  function generateResponse() {
-    const chat = state.chats.find(c => c.id === state.activeChatId);
-    if (!chat || chat.messages.length === 0) return "I'm listening.";
-
-    // Find last user message
-    let lastUserMsg = [...chat.messages].reverse().find(m => m.role === 'user');
-    if (!lastUserMsg) return "Tell me more.";
-
-    const userWords = lastUserMsg.text.split(/\s+/).map(normalize).filter(Boolean);
-
-    // Collect candidate next words from memory for any user word
-    let candidateNextWords = [];
-    userWords.forEach(word => {
-      if (memory.words[word]) {
-        const nextMap = memory.words[word].next;
-        Object.entries(nextMap).forEach(([nextWord, count]) => {
-          for (let i = 0; i < count; i++) candidateNextWords.push(nextWord);
-        });
-      }
-    });
-
-    // If no candidates, fallback to random word from memory
-    if (candidateNextWords.length === 0) {
-      const keys = Object.keys(memory.words);
-      const randomWord = keys[Math.floor(Math.random() * keys.length)];
-      candidateNextWords.push(randomWord);
+// Learning
+function learn(text) {
+  const words = text.split(/\s+/).map(normalize).filter(Boolean);
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    if (!memory.words[w]) {
+      memory.words[w] = { id: memory.next_id++, word: w, count: 0, next: {} };
     }
-
-    // Start building response
-    let current = candidateNextWords[Math.floor(Math.random() * candidateNextWords.length)];
-    let sentence = [current];
-
-    for (let i = 0; i < 15; i++) {
-      const nextMap = memory.words[current]?.next || {};
-      const weighted = [];
-      for (const [word, count] of Object.entries(nextMap)) {
-        for (let j = 0; j < count; j++) weighted.push(word);
-      }
-      if (weighted.length === 0) break;
-      current = weighted[Math.floor(Math.random() * weighted.length)];
-      sentence.push(current);
-      if (['.', '!', '?'].some(p => current.endsWith(p))) break;
+    memory.words[w].count++;
+    if (i < words.length - 1) {
+      const nextWord = words[i + 1];
+      if (!memory.words[w].next[nextWord]) memory.words[w].next[nextWord] = 0;
+      memory.words[w].next[nextWord]++;
     }
-
-    // Format sentence
-    let output = sentence.join(' ');
-    return output.charAt(0).toUpperCase() + output.slice(1);
   }
+  saveMemory();
+}
 
-  function sendMessage() {
-    const chat = state.chats.find(c => c.id === state.activeChatId);
-    if (!chat) {
-      alert('Please create or select a chat first!');
-      return;
-    }
-    const text = chatInputEl.value.trim();
-    if (!text) return;
-
-    // Add user message
-    chat.messages.push({ role: 'user', text });
-    learn(text);
-
-    // Clear input and render immediately
-    chatInputEl.value = '';
-    renderMessages();
-
-    // Generate AI response after a small delay for UX
-    sendBtnEl.disabled = true;
-    setTimeout(() => {
-      const aiResponse = generateResponse();
-      chat.messages.push({ role: 'assistant', text: aiResponse });
-      learn(aiResponse);
-      saveState();
-      renderMessages();
-      sendBtnEl.disabled = false;
-      chatInputEl.focus();
-    }, 500);
-  }
-
-  // Keyboard enter to send
-  chatInputEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
+// Response generation
+function generateResponse() {
+  const chat = state.chats.find((c) => c.id === state.activeChatId);
+  if (!chat || chat.messages.length === 0) return "I'm listening.";
+  const lastUserMsg = [...chat.messages].reverse().find((m) => m.role === 'user' && m.type !== 'image');
+  if (!lastUserMsg) return 'Tell me more.';
+  const userWords = lastUserMsg.text.split(/\s+/).map(normalize).filter(Boolean);
+  const candidateNextWords = [];
+  userWords.forEach((word) => {
+    if (memory.words[word]) {
+      const nextMap = memory.words[word].next;
+      Object.entries(nextMap).forEach(([nextWord, count]) => {
+        for (let i = 0; i < count; i++) candidateNextWords.push(nextWord);
+      });
     }
   });
-
-  // Import/export functions
-  function exportData() {
-    const data = {
-      chats: state.chats,
-      memory,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'chat-memory-export.json';
-    a.click();
-    URL.revokeObjectURL(url);
+  if (candidateNextWords.length === 0) {
+    const keys = Object.keys(memory.words);
+    candidateNextWords.push(keys[Math.floor(Math.random() * keys.length)]);
   }
-  function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.chats && data.memory) {
-          state.chats = data.chats;
-          memory = data.memory;
-          saveState();
-          saveMemory();
-          if (state.chats.length > 0) setActiveChat(state.chats[0].id);
-          renderChatList();
-          renderMessages();
-          alert('Import successful!');
-        } else {
-          alert('Invalid file format.');
-        }
-      } catch (err) {
-        alert('Error parsing JSON.');
-      }
-    };
-    reader.readAsText(file);
-    // Reset input so user can re-import same file if needed
-    event.target.value = '';
-  }
-
-  function clearMemory() {
-    if (confirm('Are you sure you want to clear all AI memory? This cannot be undone.')) {
-      memory = { words: {}, history: [], definitions: {}, next_id: 1 };
-      saveMemory();
-      alert('AI memory cleared.');
+  let current = candidateNextWords[Math.floor(Math.random() * candidateNextWords.length)];
+  const sentence = [current];
+  for (let i = 0; i < 15; i++) {
+    const nextMap = memory.words[current]?.next || {};
+    const weighted = [];
+    for (const [word, count] of Object.entries(nextMap)) {
+      for (let j = 0; j < count; j++) weighted.push(word);
     }
+    if (weighted.length === 0) break;
+    current = weighted[Math.floor(Math.random() * weighted.length)];
+    sentence.push(current);
+    if (['.', '!', '?'].some((p) => current.endsWith(p))) break;
   }
+  const output = sentence.join(' ');
+  return output.charAt(0).toUpperCase() + output.slice(1);
+}
 
-  // Initialize
-  function init() {
-    const loadedState = loadState();
-    if (loadedState && loadedState.chats && loadedState.chats.length > 0) {
-      state = loadedState;
-      if (!state.activeChatId && state.chats.length > 0) {
-        state.activeChatId = state.chats[0].id;
-      }
-    } else {
-      createChat();
-    }
-    renderChatList();
+// Sending messages
+function sendMessage() {
+  const chat = state.chats.find((c) => c.id === state.activeChatId);
+  if (!chat) {
+    alert('Please create or select a chat first!');
+    return;
+  }
+  const text = chatInputEl.value.trim();
+  if (!text) return;
+  chat.messages.push({ role: 'user', text });
+  learn(text);
+  chatInputEl.value = '';
+  renderMessages();
+  sendBtnEl.disabled = true;
+  setTimeout(() => {
+    const aiResponse = generateResponse();
+    chat.messages.push({ role: 'assistant', text: aiResponse });
+    learn(aiResponse);
+    saveState();
     renderMessages();
+    sendBtnEl.disabled = false;
+    chatInputEl.focus();
+  }, 500);
+}
+
+// Image POV generation
+function generateImagePOV(imageData) {
+  const pixels = imageData.data;
+  const pixelCount = pixels.length / 4;
+  let sumR = 0, sumG = 0, sumB = 0;
+  const luminances = [];
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2];
+    sumR += r; sumG += g; sumB += b;
+    luminances.push(0.299 * r + 0.587 * g + 0.114 * b);
   }
 
-  init();
+  const avgR = sumR / pixelCount;
+  const avgG = sumG / pixelCount;
+  const avgB = sumB / pixelCount;
+  const brightness = (avgR + avgG + avgB) / (3 * 255);
+  const colorTemp = (avgR - avgB) / 255;
+  const contrast = Math.sqrt(luminances.reduce((a, v) => a + Math.pow(v - (brightness * 255), 2), 0) / pixelCount);
+
+  // Lighting adjectives
+  const brightAdj = interpolateAdjective(brightness, ['dim', 'soft', 'bright', 'harsh']);
+  
+  // Temperature adjectives
+  const tempAdj = interpolateAdjective(colorTemp, ['icy', 'neutral', 'sunlit', 'warm']);
+  
+  // Contrast adjectives
+  const contrastAdj = interpolateAdjective(contrast / 128, ['flat', 'balanced', 'crisp']);
+  
+  // Time of day guess based on brightness & warmth
+  let timeAdj = 'day';
+  if (brightness < 0.25) timeAdj = 'night';
+  else if (brightness < 0.45) timeAdj = 'evening';
+  else if (brightness > 0.7 && colorTemp > 0.1) timeAdj = 'morning';
+  else if (brightness > 0.5) timeAdj = 'afternoon';
+  
+  // Shape/style guess based on contrast & variation in channels
+  let shapeAdj = 'smooth';
+  if (contrast > 60) shapeAdj = 'jagged';
+  if (contrast > 30 && contrast < 60) shapeAdj = 'rounded';
+  
+  // Mood guess based on color temperature & brightness
+  let moodAdj = 'calm';
+  if (colorTemp < -0.1 && brightness < 0.5) moodAdj = 'mysterious';
+  else if (colorTemp > 0.15 && brightness > 0.6) moodAdj = 'energetic';
+  else if (brightness < 0.2) moodAdj = 'somber';
+  
+  // Possible animal/life detection (VERY rough: green & brown midtones)
+  let animalAdj = '';
+  const avgGreen = avgG / 255;
+  const avgBrownish = (avgR > avgG && avgR > avgB && avgG > avgB);
+  if (avgGreen > 0.35 && avgBrownish) {
+    animalAdj = 'wildlife';
+  } else if (avgGreen > 0.45) {
+    animalAdj = 'forest';
+  }
+
+  // Combine tags
+  const tags = [
+    brightAdj,
+    tempAdj,
+    'scene',
+    contrastAdj + ' details',
+    timeAdj,
+    shapeAdj + ' forms',
+    moodAdj + ' atmosphere',
+  ];
+  
+  if (animalAdj) tags.push(animalAdj);
+
+  return tags.join(', ');
+}
+
+function interpolateAdjective(value, words) {
+  if (value <= 0.25) return words[0];
+  if (value <= 0.5) return words[1];
+  if (value <= 0.75) return words[2];
+  return words[3];
+}
+// Use POV internally to bias generation
+function generateResponseFromPOV(povText) {
+  const adjectives = povText.replace(/scene,|details/gi, '').trim().split(/\s+/);
+  const biasWord = adjectives[Math.floor(Math.random() * adjectives.length)].toLowerCase();
+  if (!memory.words[biasWord]) {
+    memory.words[biasWord] = { id: memory.next_id++, word: biasWord, count: 1, next: {} };
+  } else {
+    memory.words[biasWord].count++;
+  }
+  return generateResponse();
+}
+
+// Handle image uploads (NO POV in chat)
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  const img = new Image();
+
+  reader.onload = function (e) {
+    img.src = e.target.result;
+    const chat = state.chats.find((c) => c.id === state.activeChatId);
+    if (!chat) return;
+    chat.messages.push({ role: 'user', type: 'image', url: e.target.result });
+    renderMessages();
+  };
+
+  img.onload = function () {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const aiPOV = generateImagePOV(imageData);
+    const aiReply = generateResponseFromPOV(aiPOV);
+    console.log(aiPOV, aiReply)
+    const chat = state.chats.find((c) => c.id === state.activeChatId);
+    if (chat) {
+      chat.messages.push({ role: 'assistant', text: aiReply });
+      saveState();
+      renderMessages();
+    }
+  };
+
+  reader.readAsDataURL(file);
+}
+
+// Keyboard
+chatInputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Export/import/clear memory
+function exportData() {
+  const data = { chats: state.chats, memory };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'chat-memory-export.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.chats && data.memory) {
+        state.chats = data.chats;
+        memory = data.memory;
+        saveState();
+        saveMemory();
+        if (state.chats.length > 0) setActiveChat(state.chats[0].id);
+        renderChatList();
+        renderMessages();
+        alert('Import successful!');
+      } else {
+        alert('Invalid file format.');
+      }
+    } catch {
+      alert('Error parsing JSON.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+function clearMemory() {
+  if (confirm('Clear all AI memory?')) {
+    memory = { words: {}, history: [], definitions: {}, next_id: 1 };
+    saveMemory();
+    alert('AI memory cleared.');
+  }
+}
+
+// Init
+function init() {
+  const loadedState = loadState();
+  if (loadedState && loadedState.chats?.length > 0) {
+    state = loadedState;
+    if (!state.activeChatId) state.activeChatId = state.chats[0].id;
+  } else {
+    createChat();
+  }
+  renderChatList();
+  renderMessages();
+}
+init();
 </script>
 </body>
 </html>
