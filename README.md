@@ -1,4 +1,4 @@
-# NoNameAI
+# (Beta Version) NoNameAI
 
 A totally *stupid* AI that **doesn’t need the internet** or any fancy APIs — it’s 100% offline and useless, but hilarious if you teach it dumb stuff like "sigma" or "skibidi."
 
@@ -6,7 +6,8 @@ A totally *stupid* AI that **doesn’t need the internet** or any fancy APIs —
 
 ## What even is NoNameAI?
 
-NoNameAI is basically just a dumb chatbot that talks back in the weirdest ways. No smart algorithms here, just pure nonsense. It’s made for fun, zero practical use, and it definitely doesn’t know what it’s doing.
+NoNameAI is basically just a dumb chatbot that talks back in the weirdest ways. No smart algorithms here, just pure nonsense. It’s made for fun, zero practical use, and it definitely doesn’t know what it’s doing. 
+<br> Oh, and now it can handle images, which is somehow even funnier given it barely understands it.
 
 ---
 
