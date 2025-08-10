@@ -237,11 +237,52 @@ const MEMORY_KEY = 'ai_memory_html';
 
 // Default memory object (shortened here, replace with your full object)
 const defaultMemory = {
-  words: { hello: { id: 1, word: 'hello', count: 10, next: {} } },
-  history: [],
-  definitions: {},
-  next_id: 2,
-};
+    words: {
+      "hello": { "id": 1, "word": "hello", "count": 10, "next": {} },
+      "what": { "id": 2, "word": "what", "count": 13, "next": { "are": 1, "is": 1, "problem": 1 } },
+      "are": { "id": 3, "word": "are", "count": 6, "next": { "you": 1, "an": 2 } },
+      "you": { "id": 4, "word": "you", "count": 10, "next": { "know": 1, "are": 4, "mean": 1 } },
+      "doing": { "id": 5, "word": "doing", "count": 2, "next": {} },
+      "nothing": { "id": 6, "word": "nothing", "count": 1, "next": {} },
+      "talking": { "id": 7, "word": "talking", "count": 2, "next": { "with": 2 } },
+      "with": { "id": 8, "word": "with", "count": 2, "next": { "you": 2 } },
+      "thanks": { "id": 9, "word": "thanks", "count": 2, "next": {} },
+      "is": { "id": 10, "word": "is", "count": 4, "next": { "a": 1, "it": 1 } },
+      "roblox": { "id": 11, "word": "roblox", "count": 3, "next": { "is": 1 } },
+      "no": { "id": 12, "word": "no", "count": 5, "next": { "problem": 2 } },
+      "problem": { "id": 13, "word": "problem", "count": 4, "next": {} },
+      "im": { "id": 14, "word": "im", "count": 1, "next": {} },
+      "sitting": { "id": 15, "word": "sitting", "count": 3, "next": {} },
+      "its": { "id": 16, "word": "its", "count": 1, "next": { "a": 1 } },
+      "a": { "id": 17, "word": "a", "count": 4, "next": { "game": 1, "comma": 1, "exit": 1 } },
+      "game": { "id": 18, "word": "game", "count": 1, "next": {} },
+      "yes": { "id": 19, "word": "yes", "count": 2, "next": {} },
+      "why": { "id": 20, "word": "why", "count": 1, "next": {} },
+      "nope": { "id": 22, "word": "nope", "count": 1, "next": {} },
+      "use": { "id": 23, "word": "use", "count": 1, "next": { "a": 1 } },
+      "comma": { "id": 24, "word": "comma", "count": 1, "next": {} },
+      "": { "id": 25, "word": "", "count": 1, "next": {} },
+      "know": { "id": 26, "word": "know", "count": 1, "next": { "a": 1 } },
+      "exit": { "id": 27, "word": "exit", "count": 2, "next": {} },
+      "an": { "id": 28, "word": "an", "count": 2, "next": { "AI": 1, "ai": 1 } },
+      "not": { "id": 29, "word": "not", "count": 1, "next": { "sitting,": 1 } },
+      "ai": { "id": 30, "word": "ai", "count": 2, "next": {} },
+      "exactly": { "id": 31, "word": "exactly", "count": 1, "next": {} },
+      "am": { "id": 35, "word": "am", "count": 1, "next": { "i": 1 } },
+      "i": { "id": 36, "word": "i", "count": 1, "next": { "ai": 1 } },
+      "how": { "id": 37, "count": 1, "next": { "is": 1 } },
+      "it": { "id": 38, "count": 1, "next": { "going": 1 } },
+      "going": { "id": 39, "count": 1, "next": {} },
+      "uh": { "id": 40, "count": 1, "next": {} },
+      "do": { "id": 41, "count": 1, "next": { "you": 1 } },
+      "mean": { "id": 42, "count": 1, "next": { "by": 1 } },
+      "by": { "id": 43, "count": 1, "next": { "that": 1 } },
+      "that": { "id": 44, "count": 1, "next": {} }
+    },
+    history: [],
+    definitions: {},
+    next_id: 45
+  };
 
 function normalize(word) {
   return (word || '').toLowerCase().replace(/[^\w\s]/g, '').trim();
@@ -650,3 +691,4 @@ init();
 </script>
 </body>
 </html>
+
