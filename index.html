@@ -218,6 +218,8 @@
     <button onclick="exportData()">Export Chat & Memory</button>
     <input type="file" id="importFile" accept="application/json" onchange="importData(event)" />
     <button onclick="clearMemory()">Clear Memory</button>
+    <hr style="margin: 1rem 0;" />
+    <button id="aiToggleBtn" onclick="toggleAIConversation()">Start AI Talk Mode</button>
   </aside>
   <main>
     <h2 id="chatTitle">General</h2>
@@ -531,6 +533,50 @@
     }
     renderChatList();
     renderMessages();
+  }
+
+  let aiConversationInterval = null;
+
+  function toggleAIConversation() {
+    const toggleBtn = document.getElementById('aiToggleBtn');
+
+    if (!state.activeChatId) {
+      alert("Please create or select a chat first!");
+      return;
+    }
+
+    const chat = state.chats.find(c => c.id === state.activeChatId);
+    if (!chat) return;
+
+    if (aiConversationInterval) {
+      clearInterval(aiConversationInterval);
+      aiConversationInterval = null;
+      toggleBtn.textContent = "Start AI Talk Mode";
+      alert("AI conversation stopped!");
+      return;
+    }
+
+    toggleBtn.textContent = "Stop AI Talk Mode";
+    alert("AI conversation started!");
+    let turn = 'user';
+
+    aiConversationInterval = setInterval(() => {
+      const msg = generateResponse();
+      chat.messages.push({ role: turn, text: msg });
+      learn(msg);
+      saveState();
+      renderMessages();
+
+      turn = turn === 'user' ? 'assistant' : 'user';
+
+      // Safety stop after 1000 messages
+      if (chat.messages.length >= 1000) {
+        clearInterval(aiConversationInterval);
+        aiConversationInterval = null;
+        toggleBtn.textContent = "Start AI Talk Mode";
+        alert("AI conversation stopped (1000 messages).");
+      }
+    }, 1500);
   }
 
   init();
