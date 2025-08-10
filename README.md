@@ -27,24 +27,30 @@ Me: sigma balls
 AI: Sigma balls
 
 Me: so
+
 AI: Thanks
 
 Me: stop it
+
 AI: Going
 
 Me: what
+
 AI: Are an ai
 
 Me: gang bang you
+
 AI: Are an ai
 
 Me: NO
 AI: Problem
 
 Me: SHUT THE F#CK UP
+
 AI: F#ck up
 
 Me: no, im the sigma rizzler and the sigma god
+
 AI: Problem
 
 
