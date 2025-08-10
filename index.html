@@ -252,7 +252,53 @@ function loadState() {
   return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || 'null');
 }
 function saveState() {
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  const stateCopy = JSON.parse(JSON.stringify(state)); // deep copy
+
+  // Limit stored messages to avoid quota overflow
+  const MAX_MESSAGES = 200;
+
+  stateCopy.chats.forEach(chat => {
+    if (chat.messages.length > MAX_MESSAGES) {
+      chat.messages = chat.messages.slice(-MAX_MESSAGES);
+    }
+
+    // Compress any base64 images to smaller JPEGs before saving
+    chat.messages = chat.messages.map(msg => {
+      if (msg.type === 'image' && msg.url.startsWith('data:image')) {
+        try {
+          const img = new Image();
+          img.src = msg.url;
+
+          // Convert synchronously to compressed JPEG
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            msg.url = canvas.toDataURL('image/jpeg', 0.5); // 50% quality
+          };
+        } catch (e) {
+          console.warn('Image compression failed:', e);
+        }
+      }
+      return msg;
+    });
+  });
+
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateCopy));
+  } catch (e) {
+    console.warn('LocalStorage quota exceeded — clearing oldest chats.');
+    // Drop oldest chat until it fits
+    while (stateCopy.chats.length > 0) {
+      stateCopy.chats.shift();
+      try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateCopy));
+        break;
+      } catch {}
+    }
+  }
 }
 function loadMemory() {
   let mem = JSON.parse(localStorage.getItem(MEMORY_KEY) || 'null');
